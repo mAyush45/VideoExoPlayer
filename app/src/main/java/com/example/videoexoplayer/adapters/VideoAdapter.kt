@@ -19,15 +19,15 @@ import okhttp3.OkHttpClient
 class VideoAdapter(var context: Context, var videoList: List<Videos>) :
     RecyclerView.Adapter<VideoAdapter.VideoViewHolder>() {
 
-    private val recyclerViewHolders = mutableListOf<VideoViewHolder>()
-    private var currentPlayingPosition = -1
+    private val rvHolders = mutableListOf<VideoViewHolder>()
+    private var curPlayPos = -1
 
     inner class VideoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         var binding = ListItemBinding.bind(view)
         var player: SimpleExoPlayer? = null
 
         init {
-            recyclerViewHolders.add(this)
+            rvHolders.add(this)
         }
 
         fun showProgressBar() {
@@ -66,8 +66,8 @@ class VideoAdapter(var context: Context, var videoList: List<Videos>) :
         holder.binding.playerView.player = null
         holder.player?.release()
         holder.player = null
-        if (currentPlayingPosition == holder.adapterPosition) {
-            currentPlayingPosition = -1
+        if (curPlayPos == holder.adapterPosition) {
+            curPlayPos = -1
         }
     }
 
@@ -103,22 +103,22 @@ class VideoAdapter(var context: Context, var videoList: List<Videos>) :
 
             override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
                 if (playbackState == Player.STATE_READY) {
-                    if (currentPlayingPosition >= 0) {
-                        if (currentPlayingPosition < recyclerViewHolders.size) { // Check if currentPlayingPosition is less than the size of recyclerViewHolders
-                            recyclerViewHolders[currentPlayingPosition].hideProgressBar()
-                            recyclerViewHolders[currentPlayingPosition].binding.playerView.useController = true
+                    if (curPlayPos >= 0) {
+                        if (curPlayPos < rvHolders.size) {
+                            rvHolders[curPlayPos].hideProgressBar()
+                            rvHolders[curPlayPos].binding.playerView.useController = true
                             if (playWhenReady) {
-                                recyclerViewHolders[currentPlayingPosition].player?.play()
+                                rvHolders[curPlayPos].player?.play()
                             }
                         }
                     }
-                    player.playWhenReady = true // Set playWhenReady to true when the state is ready
+                    player.playWhenReady = true
                 } else if (playbackState == Player.STATE_ENDED) {
-                    if (currentPlayingPosition < videoList.size - 1) {
-                        currentPlayingPosition++
-                        if (currentPlayingPosition < recyclerViewHolders.size) { // Check if currentPlayingPosition is less than the size of recyclerViewHolders
-                            recyclerViewHolders[currentPlayingPosition].hideProgressBar()
-                            recyclerViewHolders[currentPlayingPosition].player?.playWhenReady = true
+                    if (curPlayPos < videoList.size - 1) {
+                        curPlayPos++
+                        if (curPlayPos < rvHolders.size) {
+                            rvHolders[curPlayPos].hideProgressBar()
+                            rvHolders[curPlayPos].player?.playWhenReady = true
                         }
                     } else {
                         // Handle the last video
@@ -172,11 +172,11 @@ class VideoAdapter(var context: Context, var videoList: List<Videos>) :
 
 
     fun releasePlayer() {
-        for (holder in recyclerViewHolders) {
+        for (holder in rvHolders) {
             holder.player?.release()
             holder.player = null
         }
-        currentPlayingPosition = -1
+        curPlayPos = -1
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
@@ -189,21 +189,21 @@ class VideoAdapter(var context: Context, var videoList: List<Videos>) :
                     val layoutManager = recyclerView.layoutManager as LinearLayoutManager
                     val firstVisiblePosition = layoutManager.findFirstVisibleItemPosition()
                     val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
-                    for (i in 0 until recyclerViewHolders.size) {
+                    for (i in 0 until rvHolders.size) {
                         if (i >= firstVisiblePosition && i <= lastVisiblePosition) {
                             // The video is visible on the screen, so play it
-                            recyclerViewHolders.getOrNull(i)?.player?.playWhenReady = true // Use getOrNull() to return null if the index is out of bounds
-                            currentPlayingPosition = i
+                            rvHolders.getOrNull(i)?.player?.playWhenReady = true // Use getOrNull() to return null if the index is out of bounds
+                            curPlayPos = i
                         } else {
                             // The video is not visible on the screen, so pause it
-                            recyclerViewHolders.getOrNull(i)?.player?.playWhenReady = false // Use getOrNull() to return null if the index is out of bounds
+                            rvHolders.getOrNull(i)?.player?.playWhenReady = false // Use getOrNull() to return null if the index is out of bounds
                         }
                     }
                 } else {
                     // The user is scrolling, so pause the currently playing video
-                    if (currentPlayingPosition >= 0 && currentPlayingPosition < recyclerViewHolders.size) { // Add a check to ensure that currentPlayingPosition is within the bounds of recyclerViewHolders
-                        recyclerViewHolders[currentPlayingPosition].player?.playWhenReady = false
-                        currentPlayingPosition = -1
+                    if (curPlayPos >= 0 && curPlayPos < rvHolders.size) { // Add a check to ensure that curPlayPos is within the bounds of rvHolders
+                        rvHolders[curPlayPos].player?.playWhenReady = false
+                        curPlayPos = -1
                     }
                 }
             }
@@ -214,8 +214,8 @@ class VideoAdapter(var context: Context, var videoList: List<Videos>) :
 
 
     private fun pauseCurrentVideo() {
-        if (currentPlayingPosition >= 0) {
-            recyclerViewHolders[currentPlayingPosition].player?.playWhenReady = false
+        if (curPlayPos >= 0) {
+            rvHolders[curPlayPos].player?.playWhenReady = false
         }
     }
 
