@@ -21,7 +21,6 @@ class VideoAdapter(var context: Context, var videoList: List<Videos>) :
 
     private val recyclerViewHolders = mutableListOf<VideoViewHolder>()
     private var currentPlayingPosition = -1
-    private var isScrolling = false
 
     inner class VideoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         var binding = ListItemBinding.bind(view)
@@ -40,6 +39,9 @@ class VideoAdapter(var context: Context, var videoList: List<Videos>) :
             binding.progressBar.visibility = View.GONE
             binding.playerView.useController = true
         }
+
+
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VideoViewHolder {
@@ -69,6 +71,7 @@ class VideoAdapter(var context: Context, var videoList: List<Videos>) :
         }
     }
 
+
     private fun preparePlayer(
         holder: VideoViewHolder,
         url: String,
@@ -85,6 +88,8 @@ class VideoAdapter(var context: Context, var videoList: List<Videos>) :
 
         val mediaSource =
             ProgressiveMediaSource.Factory(okHttpDataSourceFactory).createMediaSource(mediaItem)
+        player.setMediaSource(mediaSource)
+        player.prepare()
         player.addListener(object : Player.Listener {
             override fun onIsLoadingChanged(isLoading: Boolean) {
                 if (isLoading) {
@@ -99,23 +104,27 @@ class VideoAdapter(var context: Context, var videoList: List<Videos>) :
             override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
                 if (playbackState == Player.STATE_READY) {
                     if (currentPlayingPosition >= 0) {
-                        recyclerViewHolders[currentPlayingPosition].hideProgressBar()
-                        recyclerViewHolders[currentPlayingPosition].binding.playerView.useController = true
-                        if (playWhenReady) {
-                            recyclerViewHolders[currentPlayingPosition].player?.play()
+                        if (currentPlayingPosition < recyclerViewHolders.size) { // Check if currentPlayingPosition is less than the size of recyclerViewHolders
+                            recyclerViewHolders[currentPlayingPosition].hideProgressBar()
+                            recyclerViewHolders[currentPlayingPosition].binding.playerView.useController = true
+                            if (playWhenReady) {
+                                recyclerViewHolders[currentPlayingPosition].player?.play()
+                            }
                         }
                     }
+                    player.playWhenReady = true // Set playWhenReady to true when the state is ready
                 } else if (playbackState == Player.STATE_ENDED) {
                     if (currentPlayingPosition < videoList.size - 1) {
                         currentPlayingPosition++
-                        recyclerViewHolders[currentPlayingPosition].showProgressBar()
-                        recyclerViewHolders[currentPlayingPosition].player?.seekTo(0)
-                        recyclerViewHolders[currentPlayingPosition].player?.playWhenReady = true
+                        if (currentPlayingPosition < recyclerViewHolders.size) { // Check if currentPlayingPosition is less than the size of recyclerViewHolders
+                            recyclerViewHolders[currentPlayingPosition].hideProgressBar()
+                            recyclerViewHolders[currentPlayingPosition].player?.playWhenReady = true
+                        }
+                    } else {
+                        // Handle the last video
                     }
                 }
             }
-
-
 
 
             override fun onPlayerError(error: PlaybackException) {
@@ -155,12 +164,11 @@ class VideoAdapter(var context: Context, var videoList: List<Videos>) :
             }
 
         })
-        player.setMediaSource(mediaSource)
-        player.prepare()
-        player.playWhenReady = currentPlayingPosition == position
-//        player.playWhenReady = true
-
     }
+
+
+
+
 
 
     fun releasePlayer() {
@@ -184,21 +192,22 @@ class VideoAdapter(var context: Context, var videoList: List<Videos>) :
                     for (i in 0 until recyclerViewHolders.size) {
                         if (i >= firstVisiblePosition && i <= lastVisiblePosition) {
                             // The video is visible on the screen, so play it
-                            recyclerViewHolders[i].player?.playWhenReady = true
+                            recyclerViewHolders.getOrNull(i)?.player?.playWhenReady = true // Use getOrNull() to return null if the index is out of bounds
                             currentPlayingPosition = i
                         } else {
                             // The video is not visible on the screen, so pause it
-                            recyclerViewHolders[i].player?.playWhenReady = false
+                            recyclerViewHolders.getOrNull(i)?.player?.playWhenReady = false // Use getOrNull() to return null if the index is out of bounds
                         }
                     }
                 } else {
                     // The user is scrolling, so pause the currently playing video
-                    if (currentPlayingPosition >= 0) {
+                    if (currentPlayingPosition >= 0 && currentPlayingPosition < recyclerViewHolders.size) { // Add a check to ensure that currentPlayingPosition is within the bounds of recyclerViewHolders
                         recyclerViewHolders[currentPlayingPosition].player?.playWhenReady = false
                         currentPlayingPosition = -1
                     }
                 }
             }
+
 
         })
     }

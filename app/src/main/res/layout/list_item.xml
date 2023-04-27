@@ -22,7 +22,8 @@
         argType:use_artwork="true"
         argType:use_controller="true"
         argType:use_sensor_rotation="true"
-        app:resize_mode="zoom"/>
+        app:resize_mode="zoom"
+        />
 
     <ProgressBar
         android:id="@+id/progress_bar"

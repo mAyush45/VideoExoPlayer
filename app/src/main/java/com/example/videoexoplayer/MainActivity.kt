@@ -3,7 +3,6 @@ package com.example.videoexoplayer
 import android.os.Bundle
 import android.util.Log.e
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.videoexoplayer.adapters.VideoAdapter
 import com.example.videoexoplayer.api.APIUtilities
 import com.example.videoexoplayer.databinding.ActivityMainBinding
@@ -38,6 +37,7 @@ class MainActivity : AppCompatActivity() {
                     adapter.videoList = videos
                     adapter.notifyDataSetChanged()
                     binding.viewPager2.adapter = adapter
+
                 } else {
                     e("MainActivity", "Failed to get videos: ${response.code()}")
                 }
